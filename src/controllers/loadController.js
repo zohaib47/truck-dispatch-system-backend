@@ -1,3 +1,4 @@
+const mongoose = require('mongoose')
 const Load = require('../models/Load')
 
 
@@ -24,47 +25,87 @@ exports.createLoad = async (req, res)=>{
 };
 
 // 2. Gett all loads (list show ho sake)
-exports.getAllLoads = async (req, res)=>{
-    try {
+exports.getAllLoads = async (req, res) => {
+  try {
+    const { status, pickupLocation } = req.query;
 
-        // 1. URL se queries uthana (e.g., ?status=pending)
-        const { status, pickupLocation, truckType } = req.query;
+    let query = {};
+    if (status) query.status = status;
+    if (pickupLocation) query.pickupLocation = new RegExp(pickupLocation, 'i');
 
-        // 2. Search criteria taiyar karna
-        let query = {};
+    const loads = await Load.find(query)
+      .populate('admin', 'name fullName email') // 'fullName' add kiya
+      .populate({
+        path: 'assignedTo',
+        select: 'name fullName email phone' // 'fullName' lazmi mangwayein
+      })
+      .sort({ createdAt: -1 });
 
-        // Agar user ne status bheja hai, to sirf wahi loads dikhao
-        if (status) {
-            query.status = status;
-        }
+    // --- DEBUGGING FOR TERMINAL ---
+    // Is console ko terminal mein check karein, agar yahan assignedTo null hai to ID galat hai
+    // console.log("Loads with populated drivers:", JSON.stringify(loads, null, 2));
 
-        // Agar pickup location bheji hai, to usey search karo (Case-insensitive)
-        if (pickupLocation) {
-            query.pickupLocation = new RegExp(pickupLocation, 'i');
-        }
+    res.json(loads);
 
-        const loads = await Load.find(query).populate('admin', 'name email');
-        res.json(loads);
-        
-    } catch (err) {
-        res.status(500).json({
-        msg: "Data fetch nhi ho saka hyy", error: err.message  });
-    }
+  } catch (err) {
+    res.status(500).json({ msg: "Data fetch nahi ho saka", error: err.message });
+  }
 };
 
-// 3. Assign driver to load
 
-exports.assignDriver = async (req, res)=>{
+// 3. Assign driver to load
+exports.assignLoad = async (req, res) => {
+    console.log("Body receive hui:", req.body);
     try {
-        const {loadId, driverId}= req.body;
-        const load = await Load.findByIdAndUpdate(
-            loadId,
-            {assignedTo: driverId, status: 'assigned'},
-            {new: true}
-        );
-        res.json({msg: "Driver assign successfully", load});
+        // Frontend (AssignLoad.jsx) se aane wala data
+        const { 
+            driverId, 
+            title, 
+            pickupLocation, 
+            dropLocation, 
+            weight, 
+            material, 
+            fare, 
+            deadline, 
+            instructions 
+        } = req.body;
+
+        // 1. Naya Load create karein (findByIdAndUpdate ki jagah new Load use karein)
+        const newLoad = new Load({
+            title,
+            pickupLocation,
+            dropLocation,
+            weight,
+            material,
+            fare,
+            deadline,
+            instructions,
+            assignedTo: new mongoose.Types.ObjectId(driverId), // Driver ki ID
+            admin: req.user.id,   // Admin ki ID (from middleware)
+            status: 'pending'     // Shuru mein status pending rakhein
+        });
+
+        // 2. Database mein save karein
+        console.log("SAVE KARNE SE PEHLE ID:", driverId);
+        await newLoad.save();
+
+        // 3. Wapsi pe data populate karein taake frontend ko driver ka poora naam mile
+        const populatedLoad = await Load.findById(newLoad._id)
+            .populate('assignedTo', 'fullName name phone')
+            .populate('admin', 'fullName name');
+            console.log("POPULATED DATA:", populatedLoad);
+
+        res.status(201).json({ 
+            msg: "Load created and assigned successfully", 
+            load: populatedLoad 
+        });
+
     } catch (err) {
-        res.status(500).send("driver assign failed...")
+        console.error("Error in assignLoad:", err.message);
+        res.status(500).json({ 
+            msg: "Server error: Load assign nahi ho saka", 
+            error: err.message 
+        });
     }
 };
 
@@ -171,25 +212,3 @@ exports.updateLoadStatusByDriver = async (req, res) => {
     }
 };
 
-// Admin driver ko load assign karega
-
-exports.assignDriver = async (req, res) => {
-    try {
-        const { loadId, driverId } = req.body;
-
-        // Load ko dhoondo aur usmein driver ki ID aur status update karo
-        const load = await Load.findByIdAndUpdate(
-            loadId,
-            { assignedTo: driverId, status: 'assigned' },
-            { new: true }
-        ).populate('assignedTo', 'name email');
-
-        if (!load) {
-            return res.status(404).json({ msg: "Load nahi mila!" });
-        }
-
-        res.json({ msg: "Driver assigned successfully", load });
-    } catch (err) {
-        res.status(500).json({ msg: "Server error", error: err.message });
-    }
-};

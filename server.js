@@ -4,7 +4,9 @@ const dotenv = require('dotenv');
 const connectDB = require('./src/config/db') ;
 const authRoutes = require('./src/routes/authRoutes');
 const driverRoutes = require('./src/routes/driverRoutes');
-const loadRoutes = require('./src/routes/loadRoutes')
+const loadRoutes = require('./src/routes/loadRoutes');
+const contactRoutes = require('./src/routes/contactRoutes');
+const truckRoutes = require('./src/routes/truckRoutes')
 
 // Load environment variables
 dotenv.config();
@@ -21,6 +23,8 @@ app.use(express.json());
 app.use('/api/auth', authRoutes);
 app.use('/api/driver' , driverRoutes);
 app.use('/api/load', loadRoutes);
+app.use('/api/contact', contactRoutes);
+app.use('/api/truck', truckRoutes)
 
 // Basic Route
 app.get('/' , (req, res)=>{

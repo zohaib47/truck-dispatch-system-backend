@@ -23,7 +23,7 @@ const LoadSchema = new mongoose.Schema({
   },
   assignedTo: { 
     type: mongoose.Schema.Types.ObjectId, 
-    ref: 'User' // Driver ki ID yahan ayegi
+    ref: 'Driver' // Driver ki ID yahan ayegi
   },
   quoteAmount: { type: Number }
 }, { timestamps: true });

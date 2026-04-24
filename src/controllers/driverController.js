@@ -17,16 +17,18 @@ exports.getAllDrivers = async (req, res) => {
 // ─────────────────────────────────────────
 exports.addDriver = async (req, res) => {
   try {
-    const { fullName, phone, cnicNumber, experience, vehicleType } = req.body;  
+    const { fullName,email, phone, cnicNumber, experience, vehicleType,password } = req.body;  
 
     const driver = new Driver({
-      fullName,       
+      fullName, 
+      email,      
       phone,
       cnicNumber,     
       experience,
       vehicleType,    
       role:   'Driver',
       status: 'Available',
+      password,
     });
 
     const saved = await driver.save();
@@ -105,4 +107,28 @@ exports.updateLocation = async (req, res) => {
     console.error(error);
     res.status(500).send("Location update failed..");
   }
+};
+
+
+// controllers/authController.js ya userController.js
+exports.updateDriverStatus = async (req, res) => {
+    try {
+        const { status } = req.body;
+        const driverId = req.user.id;
+
+        // Agar Driver collection mein login ID hi main ID hai:
+        const updatedDriver = await Driver.findByIdAndUpdate(
+            driverId,
+            { status: status },
+            { new: true }
+        );
+
+        if (!updatedDriver) {
+            return res.status(404).json({ success: false, message: 'Driver record nahi mila' });
+        }
+
+        res.json({ success: true, msg: "Status updated", user: updatedDriver });
+    } catch (err) {
+        res.status(400).json({ success: false, message: 'Update failed', error: err.message });
+    }
 };

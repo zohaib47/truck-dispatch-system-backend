@@ -2,7 +2,6 @@ const mongoose = require('mongoose');
 
 const LoadSchema = new mongoose.Schema({
   title: { type: String, required: true },
-
   admin: { 
     type: mongoose.Schema.Types.ObjectId, 
     ref: 'User', 
@@ -10,21 +9,18 @@ const LoadSchema = new mongoose.Schema({
   },
   assignedTo: { 
     type: mongoose.Schema.Types.ObjectId, 
-    ref: 'User' 
+    ref: 'User' // Driver ki User ID
   },
-
   pickupLocation: { type: String, required: true },
   dropLocation: { type: String, required: true },
   weight: { type: String },
+  truckType: { type: String },
   status: { 
     type: String, 
-    enum: ['pending', 'assigned', 'dispatched', 'delivered'], 
+    enum: ['pending', 'assigned', 'picked-up', 'completed'], 
     default: 'pending' 
   },
-  assignedTo: { 
-    type: mongoose.Schema.Types.ObjectId, 
-    ref: 'Driver' // Driver ki ID yahan ayegi
-  },
+  price: { type: Number },
   quoteAmount: { type: Number }
 }, { timestamps: true });
 

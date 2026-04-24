@@ -46,7 +46,6 @@ exports.register = async (req, res) => {
 };
 
 // 2. Login User
-
 exports.login = async (req, res) => {
     try {
         const { email, password } = req.body;
@@ -54,26 +53,25 @@ exports.login = async (req, res) => {
         let foundUser = null;
         let userRole = '';
 
-        // 1. Admin Check (Sab se pehle)
-        foundUser = await Admin.findOne({ email });
+        // 1. Admin Check - .select('+password') lazmi lagayen agar model mein 'select: false' hai
+        foundUser = await Admin.findOne({ email }).select('+password');
         if (foundUser) {
             userRole = 'admin';
         } 
 
-        // 2. Agar Admin nahi mila to Driver Check
+        // 2. Driver Check
         if (!foundUser) {
-            foundUser = await Driver.findOne({ email });
+            foundUser = await Driver.findOne({ email }).select('+password');
             if (foundUser) {
                 userRole = 'driver';
             }
         }
 
-        // 3. Agar Admin/Driver nahi mila to Normal User Check
-        // Yahan hum role check nahi karenge kyunke field nahi hai
+        // 3. Normal User Check
         if (!foundUser) {
-            foundUser = await User.findOne({ email });
+            foundUser = await User.findOne({ email }).select('+password');
             if (foundUser) {
-                userRole = 'user'; // Hum manually 'user' role de rahay hain
+                userRole = 'user'; 
             }
         }
 
@@ -85,7 +83,16 @@ exports.login = async (req, res) => {
             });
         }
 
+        // ✅ FIX: Variable name 'foundUser' use karein, 'user' nahi
+        console.log("Input Password:", password);
+        console.log("DB Hashed Password:", foundUser.password);
+
         // 5. Password Match
+        // Check karein ke foundUser.password exist karta hai
+        if (!foundUser.password) {
+            return res.status(500).json({ success: false, message: "Password field missing in DB" });
+        }
+
         const isMatch = await bcrypt.compare(password, foundUser.password);
         if (!isMatch) {
             return res.status(401).json({ 
@@ -107,9 +114,10 @@ exports.login = async (req, res) => {
             token,
             user: {
                 id: foundUser._id,
-                name: foundUser.name || foundUser.username,
+                // Driver mein 'fullName' ho sakta hai, Admin mein 'name'
+                name: foundUser.fullName || foundUser.name || foundUser.username,
                 email: foundUser.email,
-                role: userRole // Frontend ko yahan se 'user' mil jaye ga
+                role: userRole
             }
         });
 

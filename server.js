@@ -9,7 +9,11 @@ const contactRoutes = require('./src/routes/contactRoutes');
 const truckRoutes = require('./src/routes/truckRoutes')
 
 // Load environment variables
-dotenv.config();
+// dotenv.config();
+if (process.env.NODE_ENV !== 'production') {
+    require('dotenv').config();
+}
+
 const app = express();
 
 // Connect to Database

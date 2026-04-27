@@ -16,7 +16,12 @@ const app = express();
 connectDB(); 
 
 // Middleware
-app.use(cors());
+// app.use(cors());
+app.use(cors({
+  origin: "https://truck-dispatch-system-frontend.vercel.app", // Yahan apne frontend ka naya URL likhein
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  credentials: true
+}));
 app.use(express.json());
 
 // routes

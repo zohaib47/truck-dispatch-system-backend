@@ -8,22 +8,20 @@ const loadRoutes = require('./src/routes/loadRoutes');
 const contactRoutes = require('./src/routes/contactRoutes');
 const truckRoutes = require('./src/routes/truckRoutes')
 
-// Load environment variables
-// dotenv.config();
+
 if (process.env.NODE_ENV !== 'production') {
     require('dotenv').config();
 }
 
 const app = express();
 
-// Connect to Database
+
 connectDB(); 
 
-// Middleware
-// app.use(cors());
+
 app.use(cors({
-  origin: "https://truck-dispatch-system-frontend.vercel.app", // Yahan apne frontend ka naya URL likhein
-  methods: ["GET", "POST", "PUT", "DELETE"],
+  origin: "https://truck-dispatch-system-frontend.vercel.app", 
+  methods: ["GET", "POST", "PUT", "PATCH" ,"DELETE"],
   credentials: true
 }));
 app.use(express.json());
@@ -53,5 +51,5 @@ if (process.env.NODE_ENV !== 'production') {
     app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 }
 
-// Vercel ke liye sab se zaroori line
+
 module.exports = app;
